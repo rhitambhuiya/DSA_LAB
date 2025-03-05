@@ -1,99 +1,119 @@
 #include <iostream>
 using namespace std;
 
+class Node
+{
+	public:
+	int data;
+	Node *next;
+	Node(int data)
+	{
+		this -> data = data;
+		this -> next = nullptr;
+	}
+};
+
 class Queue
 {
-    public:
-        int size;
-        int front;
-        int rear;
-        int *queue;
-
-        Queue(int size)
-        {
-            this -> size = size;
-            this -> front = -1;
-            this -> rear = -1;
-            this -> queue = new int[size];
-        }
-
-        void enqueue(int data)
-        {
-            if(front > rear) // If Queue is empty, start over
-                front = rear = -1;
-            if (rear == size - 1)
-            {
-                cout << endl << "Queue is Full!" << endl;
-                return;
-            }
-            rear += 1;
-            queue[rear] = data;
-            cout << endl << data << " successfully pushed into the Queue" << endl;
-        }
-
-        int dequeue()
-        {
-            if(front == -1)
-                front = 0;
-            int val = queue[front];
-            if(front > rear) // If Queue is empty, start over
-            {
-                front = rear = -1;
-                return -1;
-            }
-            front += 1;
-            return val;
-        }
-
-        void display()
-        {
-            if((front > rear) || (front == -1 && rear == -1))
-            {
-                cout << endl << "Queue is Empty!" << endl;
-                return;
-            }
-            cout << "Displaying Queue: " << endl << endl;
-            int start = (front >= 0) ? front : 0;
-            for(int i = start; i <= rear; i++)
-                cout << queue[i] << "|";
-                cout << endl;
-        }
+	public:
+		Node* front, *rear;
+		int size, val;
+		Queue()
+		{	
+			front = rear = nullptr;
+			size = 0;
+		}
+		
+		void enqueue(int data)
+		{
+			Node* newNode = new Node(data);
+			if(!rear)
+			{
+				rear = newNode;
+				front = newNode;
+				size = 1;
+				return;
+			}
+			rear -> next = newNode;
+			rear = newNode;
+			size += 1;
+		}
+		
+		int dequeue()
+		{
+			if(!front)
+				return -1;
+			val = front -> data;
+			if(front == rear){
+				front = rear = nullptr;
+				size = 0;
+				}
+			else{
+				front = front -> next;
+				size -= 1;
+				}
+			return val;
+		}
+		
+		bool isEmpty()
+		{
+			return rear == nullptr;
+		}
+		
+		void display()
+		{
+			if(!rear){
+				cout << "Queue is empty!\n";
+				return;
+				}
+			Node *temp = front;
+			cout << "\nDisplaying Queue: ";
+			while(temp)
+			{
+				cout << temp -> data << " -> ";
+				temp = temp -> next;
+			}	
+			cout << "NULL\n";
+		}
+		
 };
 
 int main()
 {
-    int n;
-    cout << "Enter the Queue size: ";
-    cin >> n;
-    Queue q(n);
-    while(1)
-    {
-        cout << "\nEnter:-\n1. Enqueue Operation \n2. Dequeue Operation\n3. To display the Queue: ";
-        int choice;
-        int val;
-        cin >> choice;
-        switch(choice)
-        {
-            case 1: int data;
-            cout << "Enter the value to enter into the Queue: ";
-            cin >> data;
-            q.enqueue(data);
-            
-            break;
-
-            case 2: val = q.dequeue();
-            if(val == -1)
-                cout << endl << "Queue is Empty!" << endl;
-            else
-                cout << endl << "Value removed from the Queue: " << val;
-            break;
-
-            case 3:
-            q.display();
-            break;
-
-            default:
-            exit(0);
-        }
-    }
+	Queue q;
+	while(true)
+	{
+		int ch;
+		cout << "\nEnter \n1. Enqueue operation \n2. Dequeue operation \n3. To check if the queue is empty: ";
+		int data, val;
+		cin >> ch;
+		switch(ch)
+		{
+			case 1: cout << "\nEnter the data to enter: ";
+			cin >> data;
+			q.enqueue(data);
+			q.display();
+			break;
+			
+			case 2: val = q.dequeue();
+			if(val == -1)
+				cout << "\nCan't remove, queue is  empty!\n";
+			else
+				cout << "\nValue removed: " << val << "\n";
+				q.display();
+			break;
+			
+			case 3: val = q.isEmpty();
+			if(val == true)
+				cout << "Queue is  empty!\n";
+			else
+				cout << "\nSize of the Queue: " << q.size << "\n";
+			break;
+			
+			default: cout << "\nWrong Choice\n";
+			exit(0); 
+			
+		}
+	}
+	
 }

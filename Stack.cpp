@@ -1,102 +1,119 @@
 #include <iostream>
 using namespace std;
 
+class Node
+{
+	public:
+	int data;
+	Node *next;
+	Node(int data)
+	{
+		this -> data = data;
+		this -> next = nullptr;
+	}
+};
+
 class Stack
 {
-    public:
-        int size;
-        int top;
-        int *stack;
-        Stack(int size)
-        {
-            this -> size = size;
-            this -> top = -1;
-            this -> stack = new int[size];
-        }
-
-        void push(int data)
-        {
-            if (top == size - 1)
-            {
-                cout << endl << "Stack is Full!" << endl;
-                return;
-            }
-            top += 1;
-            stack[top] = data;
-            cout << endl << data << " successfully pushed into the stack" << endl;
-        }
-
-        int pop()
-        {
-            if(top == -1)
-                return top;
-            int val = stack[top];
-            top -= 1;
-            return val;
-        }
-
-        int peek()
-        {
-            return stack[top];
-        }
-
-        void display()
-        {
-            if(top == -1)
-            {
-                cout << endl << "Stack is Empty!" << endl;
-                return;
-            }
-
-            int rear = top;
-            cout << "Displaying Stack: " << endl << endl;
-            while(rear >= 0)
-            {
-                cout << "|" << stack[rear] << "|" << endl;
-                cout << "---" << endl;
-                rear -= 1;
-            }
-        }
+	public:
+		Node* top;
+		int size, val;
+		Stack()
+		{	
+			top = nullptr;
+			size = 0;
+		}
+		
+		void push(int data)
+		{
+			Node* newNode = new Node(data);
+			newNode -> next = top;
+			top = newNode;
+			size += 1;
+		}
+		
+		int pop()
+		{
+			if(!top)
+				return -1;
+			val = top -> data;
+			top = top -> next;
+			if (size > 0)
+				size -= 1;
+			return val;
+		}
+		
+		int peek()
+		{
+			if(!top)
+				return -1;
+			return top -> data;
+		}
+		
+		bool isEmpty()
+		{
+			return top == nullptr;
+		}
+		
+		void display()
+		{
+			if(!top)
+				cout << "Stack is empty!\n";
+			Node *temp = top;
+			cout << "\nDisplaying Stack: ";
+			while(temp)
+			{
+				cout << temp -> data << " -> ";
+				temp = temp -> next;
+			}	
+			cout << "NULL\n";
+		}
+		
 };
 
 int main()
 {
-    int n;
-    cout << "Enter the stack size: ";
-    cin >> n;
-    Stack st(n);
-    while(1)
-    {
-        cout << "\nEnter:-\n1. To push into the stack \n2. To pop from the stack\n3. To peek into the stack \n4. To display the stack: ";
-        int choice;
-        int val;
-        cin >> choice;
-        switch(choice)
-        {
-            case 1: int data;
-            cout << "Enter the value to push into the stack: ";
-            cin >> data;
-            st.push(data);
-            
-            break;
-
-            case 2: val = st.pop();
-            if(val == -1)
-                cout << endl << "Stack is Empty!" << endl;
-            else
-                cout << endl << "Value popped: " << val;
-            break;
-
-            case 3:
-            cout << endl << "Top Element in the Stack: " << st.peek() << endl;
-            break;
-
-            case 4:
-            st.display();
-            break;
-
-            default:
-            exit(0);
-        }
-    }
+	Stack st;
+	while(true)
+	{
+		int ch;
+		cout << "\nEnter 1. To push into the stack \n2. To pop from the stack \n3. To peek into the stack \n4. To check if the stack is empty: ";
+		int data, val;
+		cin >> ch;
+		switch(ch)
+		{
+			case 1: cout << "\nEnter the data to push: ";
+			cin >> data;
+			st.push(data);
+			st.display();
+			break;
+			
+			case 2: val = st.pop();
+			if(val == -1)
+				cout << "\nCan't pop, stack is  empty!\n";
+			else
+				cout << "\nValue popped: " << val << "\n";
+				st.display();
+			break;
+			
+			case 3: val = st.peek();
+			if(val == -1)
+				cout << "\nCan't peek, stack is  empty!\n";
+			else
+				cout << "\nValue at the top of the stack: " << val << "\n";
+			break;
+			
+			case 4: val = st.isEmpty();
+			if(val == true)
+				cout << "Stack is  empty!\n";
+			else
+				cout << "\nSize of the stack: " << st.size << "\n";
+			break;
+			
+			default: cout << "\nWrong Choice\n";
+			exit(0); 
+			
+		}
+	}
+	
 }
