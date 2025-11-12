@@ -1,0 +1,841 @@
+FIFO
+
+from collections import deque
+
+class Page_Replacement_FIFO:
+    def __init__(self):
+        self.frame_size = None
+        self.page_string = None
+        self.num_pages = None
+        self.frame = []
+        self.page_faults = 0
+        self.page_set = set()
+        self.pointer = 0
+
+    def algorithm(self):
+        for page in self.page_string:
+            if page in self.page_set:
+                self.display(page, "Page Hit")
+                continue
+
+            self.page_faults += 1
+
+            if len(self.frame) == self.frame_size:
+                pageToRemove = self.frame[self.pointer]
+                self.page_set.discard(pageToRemove)
+                self.frame[self.pointer] = page
+                self.pointer = (self.pointer + 1) % self.frame_size
+            else:
+                self.frame.append(page)
+
+            self.page_set.add(page)
+            self.display(page, "Page Fault")
+
+    def input(self):
+        self.frame_size = int(input("Enter the frame size: "))
+        inp = input("\nEnter page reference string with each page separated by a space: ")
+        self.page_string = list(map(int, inp.split()))
+        self.num_pages = len(self.page_string)
+
+    def display(self, page, status):
+        print(f"{page:^15}", end="")
+        for i in range(self.frame_size):
+            if i >= len(self.frame):
+                print(f"{' ':^15}", end="")
+            else:
+                print(f"{self.frame[i]:^15}", end="")
+        print(f"{status:^15}")
+
+    def main(self):
+        self.input()
+        print(f"\n{'Reference':^15}{'Frame 1':^15}{'Frame 2':^15}{'Frame 3':^15}{'Status':^15}")
+        self.algorithm()
+        print(f"\nTotal Page Faults = {self.page_faults}")
+        print(f"Page Fault Rate = {self.page_faults / self.num_pages:.2f}")
+
+
+# Run the program
+sol = Page_Replacement_FIFO()
+sol.main()
+
+
+
+
+===================================================================
+LRU
+
+class Solution:
+    def __init__(self):
+        self.pages = None
+        self.frames = None
+        self.queue = [] #contains (element, index) pair, always remove the pair at 0th index
+        self.page_faults = 0
+        self.memory = []
+        self.seen = set() #to see if page in memory
+
+    def update(self, page):
+        for i in range(len(self.queue)):
+            if self.queue[i][0] == page:
+                break
+        p = self.queue.pop(i) #pop out the page
+        self.queue.append(p) #move the recently accesed page to the end of the queue
+
+    def remove(self):
+        p, idx = self.queue.pop(0) #0th index always contains the least recently used page
+        return (p, idx)
+
+    def lru(self):
+        for page in self.pages:
+            status = "Page Hit"
+            if page in self.seen:
+                self.update(page)
+            else:
+                status = "Page Fault"
+                self.page_faults += 1
+                self.seen.add(page)
+                if len(self.memory) < self.frames:
+                    self.memory.append(page)
+                    self.queue.append((page, len(self.queue)))
+                else:
+                    p, idx = self.remove()
+                    self.seen.discard(p)
+                    self.queue.append((page, idx))
+                    self.memory[idx] = page
+            print(self.memory, status, end = "\n")
+
+
+    def input(self):
+        self.pages = list(map(int, input("Enter the page string with each page separated by space: ").split()))
+        self.frames = int(input("\nEnter the number of frames: "))
+
+    def display(self):
+        print(f"\nTotal Page Faults: {self.page_faults}")
+
+    def main(self):
+        self.input()
+        self.lru()
+        self.display()
+
+if __name__ == "__main__":
+    sol = Solution()
+    sol.main()
+    
+=====================================================================================
+
+Optimal
+
+class Solution:
+    def __init__(self):
+        self.pages = None
+        self.frames = None
+        self.page_faults = 0
+        self.memory = []
+        self.seen = set() 
+        self.pageMap = {}
+
+    def find(self, idx, temp):
+        while idx < len(self.pages) and len(temp) > 1:
+            if self.pages[idx] in temp:
+                temp.remove(self.pages[idx])
+            idx += 1
+        return list(temp)[0]
+
+    def opt(self):
+        for i, page in enumerate(self.pages):
+            status = "Page Hit"
+            if page not in self.seen:
+                status = "Page Fault"
+                self.page_faults += 1
+                if len(self.memory) < self.frames:
+                    self.pageMap[page] = i
+                    self.memory.append(page)
+                else:
+                    temp = self.seen.copy()
+                    p = self.find(i + 1, temp)
+                    idx = self.pageMap[p]
+                    del self.pageMap[p]
+                    self.seen.discard(p)
+                    self.memory[idx] = page
+                    self.pageMap[page] = idx
+                self.seen.add(page)
+            print(self.memory, status, end = "\n")
+
+    def input(self):
+        self.pages = list(map(int, input("Enter the page string with each page separated by space: ").split()))
+        self.frames = int(input("\nEnter the number of frames: "))
+
+    def display(self):
+        print(f"\nTotal Page Faults: {self.page_faults}")
+
+    def main(self):
+        self.input()
+        self.opt()
+        self.display()
+
+if __name__ == "__main__":
+    sol = Solution()
+    sol.main()
+    
+---------------------------------------------------------------------------------
+
+SSTF
+
+
+class Solution:
+    def __init__(self):
+        self.queue = None
+        self.head = None
+        self.seek_time = 0
+
+    def search_shortest(self):
+        idx = -1
+        MIN = 10000
+        for i, req in enumerate(self.queue):
+            if req == self.head:
+                continue
+            if abs(req - self.head) < MIN:
+                idx = i
+                MIN = abs(req - self.head)
+        self.seek_time += MIN
+        return idx
+
+    def sstf(self):
+        if self.head in self.queue:
+            self.queue.remove(self.head)
+        while self.queue:
+            new_head_idx = self.search_shortest()
+            self.head = self.queue.pop(new_head_idx)
+
+    def input(self):
+        self.queue = list(map(int, input("Enter the service requests separated by space: ").split()))
+        self.head = int(input("\nEnter the starting position of the head: "))
+        print("\n")
+
+    def main(self):
+        self.input()
+        self.sstf()
+        print(f"\nTotal Seek Time is {self.seek_time}")
+
+sol = Solution()
+sol.main()
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Banker's
+
+from collections import deque
+
+class Process:
+    def __init__(self, name, MAX, ALLOC, NEED):
+        self.name = name
+        self.max = MAX
+        self.allocated = ALLOC
+        self.need = NEED
+
+class Banker:
+    def __init__(self):
+        self.cpu = deque()
+        self.available = []
+        self.n = None
+        self.num_resources = None
+        self.completed = []
+
+    def canAllocate(self, process) -> bool:
+        for i in range(self.num_resources):
+            if process.need[i] > self.available[i]:
+                return False
+        return True
+    
+    def freeResources(self, process):
+        for i in range(self.num_resources):
+            self.available[i] += process.allocated[i]
+
+    def algorithm(self) -> bool:
+        while len(self.completed) < self.n:
+            num = len(self.cpu)
+            found = False
+            for _ in range(num):
+                process = self.cpu.popleft()
+                if self.canAllocate(process):
+                    found = True
+                    self.freeResources(process)
+                    self.completed.append(process)
+                else:
+                    self.cpu.append(process)
+
+            if not found:
+                return False
+            
+        return True
+
+
+    def display(self):
+        print("\n\nSystem is in a safe state!", end = "\n")
+        print("\nThe Safe Sequence is: ")
+        for process in self.completed:
+            print(process.name, end = " -> ")
+        print("END")
+
+    def input(self):
+        self.num_resources = int(input("\nEnter the types of resources: "))
+        for i in range(self.num_resources):
+            inp = int(input(f"\nEnter the number of resources of type {i + 1}: "))
+            self.available.append(inp)
+
+        self.n = int(input("\nEnter the number of processes: "))
+        for i in range(self.n):
+            print(f"\nFor Process {i + 1}...", end = "\n\n")
+            name = input("Enter process name: ")
+            MAX = []
+            ALLOC = []
+            NEED = []
+
+            for j in range(self.num_resources):
+                inp = int(input(f"\nEnter the MAX resources of type {j + 1}: "))
+                MAX.append(inp)
+                inp = int(input(f"\nEnter the ALLOCATED resources of type {j + 1}: "))
+                ALLOC.append(inp)
+                need = MAX[-1] - ALLOC[-1]
+                NEED.append(need)
+                self.available[j] -= ALLOC[-1]
+
+            process = Process(name, MAX, ALLOC, NEED)
+            self.cpu.append(process)
+
+
+    def main(self):
+        self.input()
+        status = self.algorithm()
+        if not status:
+            print("\n\nSystem is not in a safe state!")
+            return
+        self.display()
+
+
+b = Banker()
+b.main()
+=============================================================================================================
+
+MLQ
+
+from collections import deque
+
+class Process:
+    def __init__(self, pID, arrival_time, burst_time, priority):
+        self.pID = pID
+        self.arrival_time = arrival_time
+        self.burst_time = burst_time
+        self.priority = priority
+        self.waiting_time = 0
+        self.turnaround_time = 0
+
+
+class MLQ:
+    def __init__(self):
+        self.cpu = deque()
+        self.low = []
+        self.high = []
+        self.completed = []
+        self.gantt = []
+        self.system_time = 0
+        self.time_quantum = None
+        self.total_waiting_time = 0
+        self.total_turnaround_time = 0
+        self.n = 0
+
+    def check_memory(self, processes):
+        while processes and processes[0].arrival_time <= self.system_time:
+            process = processes.pop(0)
+            self.cpu.append((process, process.burst_time))
+
+    def round_robin(self, num_high):
+        while len(self.completed) < num_high:
+            if not self.cpu:
+                self.system_time = self.high[0].arrival_time
+                self.check_memory(self.high)
+
+            process, rem_bt = self.cpu.popleft()
+            self.system_time += min(self.time_quantum, rem_bt)
+            self.check_memory(self.high)
+
+            if rem_bt <= self.time_quantum:
+                process.turnaround_time = self.system_time - process.arrival_time
+                process.waiting_time = process.turnaround_time - process.burst_time
+                self.total_waiting_time += process.waiting_time
+                self.total_turnaround_time += process.turnaround_time
+                self.completed.append(process)
+            else:
+                self.cpu.append((process, rem_bt - self.time_quantum))
+
+            self.gantt.append(process)
+
+    def fcfs(self):
+        while len(self.completed) < self.n:
+            if not self.cpu:
+                self.system_time = self.low[0].arrival_time
+                self.check_memory(self.low)
+
+            process, burst_time = self.cpu.popleft()
+            self.system_time += burst_time
+            self.check_memory(self.low)
+
+            process.turnaround_time = self.system_time - process.arrival_time
+            process.waiting_time = process.turnaround_time - process.burst_time
+            self.total_waiting_time += process.waiting_time
+            self.total_turnaround_time += process.turnaround_time
+            self.completed.append(process)
+            self.gantt.append(process)
+
+    def algorithm(self):
+        self.check_memory(self.high)
+        self.round_robin(len(self.high))
+        self.check_memory(self.low)
+        self.fcfs()
+
+    def display(self):
+        print("\n{:<10} {:<12} {:<10} {:<10} {:<15} {:<15}".format(
+            "Process", "Arrival Time", "Burst Time", "Priority", "Waiting Time", "Turnaround Time"))
+
+        self.completed.sort(key=lambda p: p.arrival_time)
+
+        for process in self.completed:
+            print("{:<10} {:<12} {:<10} {:<10} {:<15} {:<15}".format(
+                process.pID, process.arrival_time, process.burst_time,
+                process.priority, process.waiting_time, process.turnaround_time))
+
+        print(f"\nAverage Waiting Time: {self.total_waiting_time / self.n:.2f}")
+        print(f"Average Turnaround Time: {self.total_turnaround_time / self.n:.2f}")
+
+        print("\nGantt Chart: ", end="")
+        for process in self.gantt:
+            print(process.pID, end=" -> ")
+        print("END\n")
+
+    def input(self):
+        self.time_quantum = int(input("\nEnter the time quantum for Queue 1: "))
+        self.n = int(input("Enter the number of processes: "))
+
+        for i in range(self.n):
+            print(f"\nFor Process {i + 1}:")
+            pID = input("Enter the process ID: ")
+            arrival_time = int(input("Enter the arrival time: "))
+            burst_time = int(input("Enter the burst time: "))
+            priority = int(input("Enter the priority (1 = High, 2 = Low): "))
+
+            process = Process(pID, arrival_time, burst_time, priority)
+            if priority == 1:
+                self.high.append(process)
+            elif priority == 2:
+                self.low.append(process)
+            else:
+                print("Priority should be either 1 or 2")
+                return
+
+        self.high.sort(key=lambda p: p.arrival_time)
+        self.low.sort(key=lambda p: p.arrival_time)
+
+    def main(self):
+        self.input()
+        self.algorithm()
+        self.display()
+
+obj = MLQ()
+obj.main()
+
+=================================================================================================================================
+
+DMA
+
+from collections import deque
+import sys
+
+class Solution:
+    def __init__(self):
+        self.memory = []
+        self.processes = deque()
+        self.allocated = {}
+        self.num_blocks = None
+        self.num_processes = None
+
+    def check_memory_ff(self, process, j):
+        status = False
+        for i in range(len(self.memory)):
+            curr = self.memory[i]
+            if curr >= process:
+                status = True
+                curr -= process
+                self.memory[i] = curr
+                self.allocated[j + 1] = i + 1
+                break
+        return status
+
+    def check_memory_bf(self, process, j):
+        smallest = float('inf')
+        idx = -1
+        for i in range(len(self.memory)):
+            curr = self.memory[i]
+            if curr >= process and curr <= smallest:
+                idx = i
+                smallest = curr
+        if idx == -1:
+            return False
+        self.memory[idx] -= process
+        self.allocated[j + 1] = idx + 1
+        return True
+
+    def check_memory_wf(self, process, j):
+        largest = float('-inf')
+        idx = -1
+        for i in range(len(self.memory)):
+            curr = self.memory[i]
+            if curr >= process and curr >= largest:
+                idx = i
+                largest = curr
+        if idx == -1:
+            return False
+        self.memory[idx] -= process
+        self.allocated[j + 1] = idx + 1
+        return True
+
+    def first_fit(self):
+        for i in range(self.num_processes):
+            process = self.processes.popleft()
+            allocated = self.check_memory_ff(process, i)
+            if not allocated:
+                self.processes.append(process)
+
+    def best_fit(self):
+        for i in range(self.num_processes):
+            process = self.processes.popleft()
+            allocated = self.check_memory_bf(process, i)
+            if not allocated:
+                self.processes.append(process)
+
+    def worst_fit(self):
+        for i in range(self.num_processes):
+            process = self.processes.popleft()
+            allocated = self.check_memory_wf(process, i)
+            if not allocated:
+                self.processes.append(process)
+
+    def input(self):
+        n = int(input("Enter the number of memory blocks: "))
+        self.num_blocks = n
+        print()
+        for i in range(n):
+            inp = int(input(f"Enter the size of memory block {i + 1}: "))
+            self.memory.append(inp)
+
+        print()
+        n = int(input("Enter the number of processes: "))
+        self.num_processes = n
+        print()
+        for i in range(n):
+            inp = int(input(f"Enter the size of process {i + 1}: "))
+            self.processes.append(inp)
+        print()
+
+    def display(self):
+        print("\n")
+        left_out = []
+        for i in range(self.num_processes):
+            if i + 1 not in self.allocated:
+                left_out.append(i + 1)
+            else:
+                print(f"Process {i + 1} -> Block {self.allocated[i + 1]}")
+        print()
+        if left_out:
+            for p in left_out:
+                print(f"Process {p} could not be allocated")
+        print(f"\nRemaining Block Sizes: {self.memory}")
+
+    def main(self):
+        self.input()
+        choice = int(input("\nEnter 1. First Fit  2. Best Fit  3. Worst Fit: "))
+        if choice == 1:
+            self.first_fit()
+        elif choice == 2:
+            self.best_fit()
+        elif choice == 3:
+            self.worst_fit()
+        else:
+            print("Wrong Choice")
+            sys.exit(0)
+        self.display()
+
+
+sol = Solution()
+sol.main()
+=====================================================================================================================
+
+SJF
+
+from collections import deque
+from heapq import heappush, heappop
+
+class SJF:
+    def __init__(self):
+        self.memory = []              # Stores (arrival_time, burst_time, process_name)
+        self.ready_queue = []          # Ready queue (heap)
+        self.background_time = 0       # Current system time
+        self.completed = []            # List of completed processes
+        self.total_waiting_time = 0    # Sum of waiting times
+
+    def input(self, count):
+        for _ in range(count):
+            process_name = input("Enter the process name (e.g., P1): ")
+            arrival_time = int(input("Enter the arrival time of the process: "))
+            burst_time = int(input("Enter the burst time of the process: "))
+            heappush(self.memory, (arrival_time, burst_time, process_name))
+
+    def check_memory(self):
+        # Move all processes that have arrived into the ready queue
+        while self.memory and self.memory[0][0] <= self.background_time:
+            at, bt, name = heappop(self.memory)
+            heappush(self.ready_queue, (bt, at, name))  # Sorted by burst time
+
+    def run_SJF(self):
+        self.check_memory()
+        if not self.ready_queue and self.memory:
+            # If no process has arrived yet, move time forward
+            self.background_time = self.memory[0][0]
+            self.check_memory()
+
+        bt, at, ID = heappop(self.ready_queue)
+        self.background_time += bt
+        tat = self.background_time - at
+        wt = tat - bt
+        self.total_waiting_time += wt
+        completed_process = (ID, at, bt, wt, tat)
+        self.completed.append(completed_process)
+
+    def display(self, count):
+        print("\n{:<10} {:<12} {:<13} {:<15} {}".format(
+            "Process", "Arrival Time", "Burst Time", "Waiting Time", "Turnaround Time"))
+        completed = sorted(self.completed, key=lambda x: x[1])
+
+        for process in completed:
+            ID, arrival, burst, waiting, tat = process
+            print("{:<10} {:<12} {:<13} {:<15} {}".format(
+                ID, arrival, burst, waiting, tat))
+
+    def main(self):
+        count = int(input("Enter the number of processes: "))
+        self.input(count)
+        for _ in range(count):
+            self.run_SJF()
+        self.display(count)
+        avg_wt = self.total_waiting_time / count
+        print("\nAverage Waiting Time: {:.2f}".format(avg_wt))
+
+
+# Run program
+obj = SJF()
+obj.main()
+
+
+=========================================================================================================
+
+SRTF
+
+from heapq import heapify, heappush, heappop
+
+class SRTF:
+    def __init__(self, n):
+        self.ready_queue_size = n
+        self.ready_queue = []
+        self.memory = []
+        self.current_time = 0
+        self.completed = []
+        self.total_waiting_time = 0
+        self.total_turnaround_time = 0
+        self.sequence = []  # For Gantt chart visualization
+
+    def srft(self):
+        n = int(input("\nEnter the number of processes: "))
+        for _ in range(n):
+            process_name = input("Enter the name of the process (e.g., P1): ")
+            arrival_time = int(input("Enter the arrival time of the process: "))
+            burst_time = int(input("Enter the burst time of the process: "))
+            self.memory.append((arrival_time, burst_time, process_name))
+
+        heapify(self.memory)
+        self.check_memory()
+        self.cpu_scheduling(n)
+
+    def check_memory(self):
+        while self.memory and self.current_time >= self.memory[0][0]:
+            arrival_time, burst_time, process_name = heappop(self.memory)
+            heappush(self.ready_queue, (burst_time, arrival_time, process_name, burst_time))
+
+    def cpu_scheduling(self, n):
+        while len(self.completed) < n:
+            if not self.ready_queue:
+                self.current_time = self.memory[0][0]
+                self.check_memory()
+
+            current_process = heappop(self.ready_queue)
+            burst_time, arrival_time, process_name, original_burst_time = current_process
+            self.sequence.append((process_name, self.current_time, self.current_time + 1))
+            self.current_time += 1
+
+            self.check_memory()
+
+            if burst_time > 1:
+                heappush(self.ready_queue, (burst_time - 1, arrival_time, process_name, original_burst_time))
+            else:
+                waiting_time = self.current_time - arrival_time - original_burst_time
+                self.total_waiting_time += waiting_time
+                turnaround_time = self.current_time - arrival_time
+                self.total_turnaround_time += turnaround_time
+                self.completed.append((process_name, arrival_time, original_burst_time, waiting_time, turnaround_time))
+
+        self.display(n)
+
+    def display(self, n):
+        completed_processes = sorted(self.completed, key=lambda x: x[1])
+
+        print("\n{:<10}{:<15}{:<15}{:<15}{:<15}".format(
+            "Process", "Arrival Time", "Burst Time", "Waiting Time", "Turnaround Time"
+        ))
+        for process in completed_processes:
+            print("{:<10}{:<15}{:<15}{:<15}{:<15}".format(
+                process[0], process[1], process[2], process[3], process[4]
+            ))
+
+        avg_waiting_time = self.total_waiting_time / n
+        avg_turnaround_time = self.total_turnaround_time / n
+
+        print(f"\nAverage Waiting Time: {avg_waiting_time:.2f}")
+        print(f"Average Turnaround Time: {avg_turnaround_time:.2f}")
+
+        print("\nGantt Chart Sequence:")
+        i = 0
+        while i < len(self.sequence) - 1:
+            name = self.sequence[i][0]
+            start = self.sequence[i][1]
+            end = self.sequence[i][2]
+            while i < len(self.sequence) - 1 and self.sequence[i][0] == self.sequence[i + 1][0]:
+                end = self.sequence[i + 1][2]
+                i += 1
+            print(f"{start} - {end}: {name}")
+            i += 1
+
+        if i == len(self.sequence) - 1:
+            name = self.sequence[-1][0]
+            start = self.sequence[-1][1]
+            end = self.sequence[-1][2]
+            print(f"{start} - {end}: {name}")
+
+    def main(self):
+        self.srft()
+
+
+# Run the program
+n = int(input("Enter the ready queue size: "))
+sol = SRTF(n)
+sol.main()
+==================================================================================================================================
+
+C_Look:
+
+class C_Look:
+    def __init__(self):
+        self.queue = None
+        self.head = None
+        self.head_movements = None
+        
+    def c_look(self, direction):
+        self.queue.sort()
+        idx = self.queue.index(self.head)
+        self.head_movements = 0
+        
+        if direction == "left":
+            left = self.queue[0]
+            right = self.queue[-1]
+            
+            self.head_movements += abs(left - self.head)
+            if self.head != right:
+                self.head_movements += abs(left - right)
+                self.head_movements += abs(right - self.queue[idx + 1])
+                
+        else:
+            left = self.queue[0]
+            right = self.queue[-1]
+            
+            self.head_movements += abs(self.head - right)
+            if self.head != left:
+                self.head_movements += abs(left - right)
+                self.head_movements += abs(left - self.queue[idx - 1])
+                
+        print(f"\nHead Movements: {self.head_movements}")
+            
+            
+        
+        
+    def input(self):
+        self.queue = list(map(int, input("Enter the requests: ").split()))
+        self.head = int(input("Enter the current head position: "))
+        if self.head not in self.queue:
+            self.queue.append(self.head)
+        
+    def main(self):
+        self.input()
+        self.c_look("left")
+        self.c_look("right")
+        
+if __name__ == '__main__':
+    sol = C_Look()
+    sol.main()
+    
+================================================================================
+
+Scan
+
+class Scan:
+    def __init__(self):
+        self.queue = None
+        self.head = None
+        self.disk_size = None
+        self.head_movements = 0
+
+    def c_scan(self, direction):
+        self.queue.sort()
+        idx = self.queue.index(self.head)
+        self.head_movements = 0
+        left = 0
+        right = self.disk_size - 1
+        
+        if direction == "left":
+            if idx > 0:
+                self.head_movements += self.head - 0
+            if idx != right:
+                self.head_movements += self.queue[-1]
+                
+        else:  
+            if idx < right:
+                self.head_movements += right - self.head
+            if idx > 0:
+                self.head_movements += abs(right - self.queue[0])
+        
+        print(f"\nHead Movements ({direction.upper()}): {self.head_movements}")
+        
+    def input(self):
+        self.queue = list(map(int, input("Enter the requests: ").split()))
+        self.head = int(input("Enter the current head position: "))
+        self.disk_size = int(input("Enter disk size: "))
+        
+        if self.head not in self.queue:
+            self.queue.append(self.head)
+        
+    def main(self):
+        self.input()
+        self.c_scan("left")
+        self.c_scan("right")
+
+
+if __name__ == '__main__':
+    sol = Scan()
+    sol.main()
+    
+  ===================================================================================
